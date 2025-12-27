@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎁 Розыгрыш Подарков</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка с балансом -->
+        <header class="header">
+            <div class="logo">
+                <h1>🎁 GiftBox</h1>
+                <p class="tagline">Розыгрыш подарков с сюрпризом!</p>
+            </div>
+            <div class="user-balance">
+                <div class="balance-card">
+                    <div class="balance-info">
+                        <span class="balance-label">Ваш баланс:</span>
+                        <span class="balance-amount" id="user-balance">1000 ₽</span>
+                    </div>
+                    <div class="commission-info">
+                        <small>Комиссия: 5%</small>
+                    </div>
+                </div>
+                <button class="btn btn-small btn-outline" onclick="showTransactions()">
+                    <i class="fas fa-history"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <!-- Секция с кейсами -->
+            <section class="cases-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-gift"></i> Доступные кейсы</h2>
+                    <button class="btn btn-small" onclick="createNewCase()">
+                        <i class="fas fa-plus"></i> Создать кейс
+                    </button>
+                </div>
+                
+                <div class="cases-grid" id="cases-container">
+                    <!-- Кейсы будут загружаться здесь -->
+                </div>
+            </section>
+
+            <!-- Секция открытия кейса -->
+            <section class="open-section" id="open-section" style="display: none;">
+                <div class="section-header">
+                    <h2 id="case-title"></h2>
+                    <button class="btn btn-small btn-outline" onclick="closeCaseView()">
+                        <i class="fas fa-arrow-left"></i> Назад
+                    </button>
+                </div>
+                
+                <div class="case-details">
+                    <div class="case-preview">
+                        <div class="case-image" id="case-image">
+                            <div class="case-price" id="case-price"></div>
+                        </div>
+                        <div class="case-info">
+                            <p id="case-description"></p>
+                            <div class="case-stats">
+                                <span><i class="fas fa-users"></i> Участников: <span id="case-participants">0</span></span>
+                                <span><i class="fas fa-gifts"></i> Подарков: <span id="case-gifts-count">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-primary btn-large" onclick="openCase()" id="open-case-btn">
+                            <i class="fas fa-box-open"></i> Открыть за <span id="open-price">100</span> ₽
+                        </button>
+                        <button class="btn btn-secondary" onclick="addGiftToCase()">
+                            <i class="fas fa-plus-circle"></i> Добавить подарок
+                        </button>
+                    </div>
+
+                    <!-- Список подарков в кейсе -->
+                    <div class="gifts-list">
+                        <h3><i class="fas fa-gifts"></i> Подарки в кейсе</h3>
+                        <div class="gifts-container" id="case-gifts">
+                            <!-- Подарки будут загружаться здесь -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Секция результатов -->
+            <section class="result-section" id="result-section" style="display: none;">
+                <div class="result-container">
+                    <div class="result-header">
+                        <h2><i class="fas fa-trophy"></i> Результат розыгрыша</h2>
+                    </div>
+                    
+                    <div class="result-content">
+                        <div class="prize-animation" id="prize-animation">
+                            <div class="spinner" id="spinner">
+                                <div class="spinner-item">🎁</div>
+                                <div class="spinner-item">💰</div>
+                                <div class="spinner-item">🏆</div>
+                                <div class="spinner-item">🎮</div>
+                                <div class="spinner-item">📱</div>
+                            </div>
+                        </div>
+                        
+                        <div class="prize-result" id="prize-result" style="display: none;">
+                            <div class="prize-card" id="prize-card">
+                                <div class="prize-icon" id="prize-icon">🎁</div>
+                                <h3 id="prize-name">Название приза</h3>
+                                <p class="prize-value" id="prize-value">1000 ₽</p>
+                                <p class="prize-donor" id="prize-donor"></p>
+                            </div>
+                            
+                            <div class="result-actions">
+                                <button class="btn btn-success" onclick="claimPrize()" id="claim-btn">
+                                    <i class="fas fa-check-circle"></i> Забрать приз
+                                </button>
+                                <button class="btn btn-outline" onclick="tryAgain()">
+                                    <i class="fas fa-redo"></i> Попробовать ещё
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Секция добавления подарка -->
+            <section class="add-gift-section" id="add-gift-section" style="display: none;">
+                <div class="section-header">
+                    <h2><i class="fas fa-plus-circle"></i> Добавить подарок</h2>
+                    <button class="btn btn-small btn-outline" onclick="closeAddGift()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="add-gift-form">
+                    <div class="form-group">
+                        <label for="gift-name"><i class="fas fa-tag"></i> Название подарка</label>
+                        <input type="text" id="gift-name" placeholder="Например: iPhone 15" class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gift-value"><i class="fas fa-coins"></i> Стоимость подарка (₽)</label>
+                        <input type="number" id="gift-value" placeholder="1000" min="10" class="form-input">
+                        <small class="hint">Минимальная стоимость: 10 ₽</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gift-description"><i class="fas fa-align-left"></i> Описание</label>
+                        <textarea id="gift-description" placeholder="Опишите ваш подарок..." class="form-textarea" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="commission-info-card">
+                        <div class="commission-row">
+                            <span>Стоимость подарка:</span>
+                            <span id="display-gift-value">0 ₽</span>
+                        </div>
+                        <div class="commission-row">
+                            <span>Комиссия (5%):</span>
+                            <span id="display-commission">0 ₽</span>
+                        </div>
+                        <div class="commission-row total">
+                            <span>Итого к оплате:</span>
+                            <span id="display-total">0 ₽</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn btn-primary" onclick="addGift()" id="add-gift-btn">
+                            <i class="fas fa-plus"></i> Добавить за <span id="add-gift-total">0</span> ₽
+                        </button>
+                        <button class="btn btn-outline" onclick="closeAddGift()">
+                            Отмена
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Подвал -->
+        <footer class="footer">
+            <div class="stats">
+                <div class="stat-item">
+                    <i class="fas fa-box-open"></i>
+                    <span>Открыто: <strong id="stats-opened">0</strong></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-gift"></i>
+                    <span>Выиграно: <strong id="stats-won">0</strong></span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Добавлено: <strong id="stats-added">0</strong></span>
+                </div>
+            </div>
+            <div class="footer-info">
+                <button class="btn-link" onclick="showRules()">
+                    <i class="fas fa-question-circle"></i> Правила
+                </button>
+                <span class="version">v1.0</span>
+                <button class="btn-link" onclick="showProfile()">
+                    <i class="fas fa-user"></i> Профиль
+                </button>
+            </div>
+        </footer>
+
+        <!-- Модальные окна -->
+        <div class="modal-overlay" id="rules-modal" style="display: none;">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-book"></i> Правила игры</h3>
+                    <button class="btn-close" onclick="closeModal('rules-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="rules-list">
+                        <div class="rule-item">
+                            <div class="rule-icon">🎁</div>
+                            <div class="rule-content">
+                                <h4>Добавление подарков</h4>
+                                <p>Вы можете добавить любой подарок в кейс. При этом с вашего баланса спишется стоимость подарка + 5% комиссия.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <div class="rule-icon">🎰</div>
+                            <div class="rule-content">
+                                <h4>Открытие кейсов</h4>
+                                <p>При открытии кейса вы платите установленную цену. Вы можете выиграть любой подарок из кейса.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <div class="rule-icon">💰</div>
+                            <div class="rule-content">
+                                <h4>Комиссия</h4>
+                                <p>За каждую операцию взимается 5% комиссии. Это поддерживает работу платформы.</p>
+                            </div>
+                        </div>
+                        <div class="rule-item">
+                            <div class="rule-icon">🏆</div>
+                            <div class="rule-content">
+                                <h4>Выигрыш и проигрыш</h4>
+                                <p>При выигрыше подарка, он переходит к вам. Если кто-то выиграл ваш подарок - вы теряете его стоимость.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="profile-modal" style="display: none;">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-user-circle"></i> Ваш профиль</h3>
+                    <button class="btn-close" onclick="closeModal('profile-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-info">
+                        <div class="profile-avatar" id="profile-avatar">
+                            TG
+                        </div>
+                        <h4 id="profile-name">Пользователь Telegram</h4>
+                        <div class="profile-stats">
+                            <div class="profile-stat">
+                                <span class="stat-label">Баланс:</span>
+                                <span class="stat-value" id="profile-balance">1000 ₽</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="stat-label">Всего открыто:</span>
+                                <span class="stat-value" id="profile-opened">0 кейсов</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="stat-label">Выиграно:</span>
+                                <span class="stat-value" id="profile-won">0 подарков</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="stat-label">Добавлено:</span>
+                                <span class="stat-value" id="profile-added">0 подарков</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button class="btn btn-outline" onclick="depositFunds()">
+                            <i class="fas fa-coins"></i> Пополнить баланс
+                        </button>
+                        <button class="btn btn-outline" onclick="showTransactions()">
+                            <i class="fas fa-history"></i> История операций
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="transactions-modal" style="display: none;">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-history"></i> История операций</h3>
+                    <button class="btn-close" onclick="closeModal('transactions-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="transactions-list" id="transactions-list">
+                        <!-- Транзакции будут загружаться здесь -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="create-case-modal" style="display: none;">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-plus-square"></i> Создать новый кейс</h3>
+                    <button class="btn-close" onclick="closeModal('create-case-modal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="new-case-name">Название кейса</label>
+                        <input type="text" id="new-case-name" placeholder="Например: Кейс с техникой" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-case-price">Цена открытия (₽)</label>
+                        <input type="number" id="new-case-price" placeholder="100" min="10" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-case-description">Описание</label>
+                        <textarea id="new-case-description" placeholder="Опишите ваш кейс..." class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-case-color">Цвет кейса</label>
+                        <div class="color-selector">
+                            <div class="color-option" style="background: #ff6b6b;" onclick="selectColor('#ff6b6b')"></div>
+                            <div class="color-option" style="background: #4ecdc4;" onclick="selectColor('#4ecdc4')"></div>
+                            <div class="color-option" style="background: #45b7d1;" onclick="selectColor('#45b7d1')"></div>
+                            <div class="color-option" style="background: #96ceb4;" onclick="selectColor('#96ceb4')"></div>
+                            <div class="color-option" style="background: #ffeaa7;" onclick="selectColor('#ffeaa7')"></div>
+                        </div>
+                        <input type="hidden" id="selected-color" value="#ff6b6b">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" onclick="createCase()">
+                            <i class="fas fa-check"></i> Создать кейс
+                        </button>
+                        <button class="btn btn-outline" onclick="closeModal('create-case-modal')">
+                            Отмена
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уведомления -->
+        <div class="notification" id="notification" style="display: none;">
+            <div class="notification-content">
+                <i class="fas fa-check-circle" id="notification-icon"></i>
+                <span id="notification-text"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
